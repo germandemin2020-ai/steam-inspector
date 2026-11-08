@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Universal Inspector & Inventory Checker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #080a10;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 242, 254, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #e2e8f0;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glass-card {
+            background: rgba(16, 21, 33, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card-hover {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card-hover:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 242, 254, 0.4);
+            box-shadow: 0 10px 30px -10px rgba(0, 242, 254, 0.2);
+        }
+        .neon-glow-cyan {
+            box-shadow: 0 0 25px -5px rgba(0, 242, 254, 0.35);
+        }
+        .neon-glow-gold {
+            box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.35);
+        }
+        .neon-glow-red {
+            box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.35);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0e17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-white/5 bg-[#0b0e17]/80 backdrop-blur-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-black"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-lg tracking-wider bg-gradient-to-r from-white via-slate-200 to-cyan-400 bg-clip-text text-transparent">
+                        STEAM INSPECTOR
+                    </h1>
+                    <span class="text-[10px] font-mono text-cyan-400/80 uppercase tracking-widest block -mt-1">
+                        Universal Profile & Inventory Evaluator
+                    </span>
+                </div>
+            </div>
+
+            <!-- Mode Switcher -->
+            <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-white/10">
+                <button id="mode-single-btn" onclick="setMode('single')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-black shadow-md shadow-cyan-500/20">
+                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    <span>Инспектор</span>
+                </button>
+                <button id="mode-vs-btn" onclick="setMode('vs')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 text-slate-400 hover:text-white">
+                    <i data-lucide="swords" class="w-3.5 h-3.5"></i>
+                    <span>VS Битва</span>
+                </button>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div class="hidden md:flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>ONLINE</span>
+                </div>
+                <a href="https://github.com/germandemin2020-ai/steam-inspector" target="_blank" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-all text-xs font-mono flex items-center space-x-1.5">
+                    <i data-lucide="github" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">GitHub</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
+
+        <!-- ========================================== -->
+        <!-- MODE 1: SINGLE INSPECTOR SECTION           -->
+        <!-- ========================================== -->
+        <section id="section-single" class="space-y-6">
+
+            <!-- Hero Search Card -->
+            <div class="glass-card p-6 md:p-8 rounded-3xl space-y-5 border-cyan-500/20 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="space-y-1">
+                    <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center space-x-3">
+                        <span>🔍</span>
+                        <span>Универсальный инспектор Steam</span>
+                    </h2>
+                    <p class="text-sm text-slate-400">
+                        Введите ссылку на профиль, логин (vanity URL) или 17-значный SteamID64. Авто-резолвер определит любой аккаунт.
+                    </p>
+                </div>
+
+                <!-- Search Input Bar -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input id="single-query-input" type="text" 
+                            placeholder="https://steamcommunity.com/id/... или логин / SteamID64"
+                            class="w-full pl-12 pr-10 py-3.5 rounded-2xl bg-black/50 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 text-sm font-mono transition-all">
+                        <button onclick="clearSingleInput()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <button onclick="runInspect()" id="single-submit-btn" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-black text-sm hover:opacity-95 transition-all shadow-lg shadow-cyan-500/30 flex items-center justify-center space-x-2 shrink-0">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        <span>Проверить профиль</span>
+                    </button>
+                </div>
+
+                <!-- 1-Click Demo Presets -->
+                <div class="space-y-2 pt-1 border-t border-white/5">
+                    <span class="text-xs font-mono text-slate-500 uppercase tracking-wider block">Пресеты для быстрой демонстрации в 1 клик:</span>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="usePreset('https://steamcommunity.com/id/ohnePixel')" class="px-3 py-1.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-semibold flex items-center space-x-1.5 transition-all">
+                            <span>💎</span>
+                            <span>Коллекционер (Открытый инвентарь)</span>
+                        </button>
+                        <button onclick="usePreset('76561199809477824')" class="px-3 py-1.5 rounded-xl bg-amber-950/60 hover:bg-amber-900/60 border border-amber-500/30 text-amber-300 text-xs font-mono font-semibold flex items-center space-x-1.5 transition-all">
+                            <span>🔒</span>
+                            <span>Приватный инвентарь</span>
+                        </button>
+                        <button onclick="usePreset('76561198829167907')" class="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 text-xs font-mono font-semibold flex items-center space-x-1.5 transition-all">
+                            <span>⛔</span>
+                            <span>Профиль с VAC-баном</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Searches History -->
+                <div id="recent-searches-box" class="hidden space-y-1.5 pt-1">
+                    <div class="flex items-center justify-between text-xs font-mono text-slate-500">
+                        <span>Недавние проверки:</span>
+                        <button onclick="clearRecentSearches()" class="hover:text-rose-400 transition-colors">Очистить историю</button>
+                    </div>
+                    <div id="recent-pills-container" class="flex flex-wrap gap-1.5">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="single-loader" class="hidden text-center py-16 space-y-4">
+                <div class="w-14 h-14 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mx-auto"></div>
+                <div class="space-y-1">
+                    <p class="font-bold text-white text-base">Связываемся со Steam Community...</p>
+                    <p class="text-xs text-slate-400 font-mono">Анализируем инвентарь, проверяем статус VAC и оцениваем скины</p>
+                </div>
+            </div>
+
+            <!-- Single Result Container (Hidden by default) -->
+            <div id="single-result-card" class="hidden space-y-6">
+
+                <!-- Profile Header Banner -->
+                <div class="glass-card p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center border-white/10 relative overflow-hidden">
+                    <div class="relative shrink-0">
+                        <img id="res-avatar" src="" class="w-24 h-24 rounded-2xl border-2 border-cyan-500/50 shadow-xl shadow-cyan-500/20 object-cover" alt="Avatar">
+                        <span id="res-online-dot" class="w-5 h-5 rounded-full absolute -bottom-1 -right-1 border-2 border-black bg-emerald-500"></span>
+                    </div>
+
+                    <div class="flex-1 text-center md:text-left space-y-2">
+                        <div class="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+                            <h3 id="res-persona" class="text-2xl font-black text-white">Nickname</h3>
+                            <span id="res-online-badge" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-800 text-slate-300">Offline</span>
+                            <span id="res-level-badge" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">LVL 0</span>
+                            <span id="res-badges-badge" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">0 значков</span>
+                        </div>
+                        <p id="res-status-msg" class="text-sm text-slate-400">Статус</p>
+                        <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs font-mono text-slate-500 pt-0.5">
+                            <span class="flex items-center space-x-1">
+                                <span>SteamID64:</span>
+                                <span id="res-id64" class="text-slate-300">765611...</span>
+                                <button onclick="copySteamId()" class="text-cyan-400 hover:text-cyan-300 ml-1" title="Копировать">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </span>
+                            <span>•</span>
+                            <span id="res-member-since">В Steam с: ...</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center md:text-right shrink-0 space-y-2">
+                        <span id="res-vac-badge" class="px-3.5 py-2 rounded-2xl text-xs font-bold font-mono block">
+                            🛡 Без блокировок (VAC Clean)
+                        </span>
+                        <a id="res-steam-link" href="#" target="_blank" class="inline-flex items-center space-x-1.5 text-xs font-mono text-slate-400 hover:text-cyan-400 transition-colors">
+                            <span>Открыть в Steam</span>
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 4 Stats Cards Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Инвентарь</span>
+                        <div id="res-inv-status-pill" class="text-lg font-black text-emerald-400">Открыт</div>
+                        <span id="res-inv-status-sub" class="text-[10px] text-slate-500 block">доступность</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Оценка инвентаря</span>
+                        <div id="res-inv-value-rub" class="text-2xl font-black text-cyan-400">~0 ₽</div>
+                        <span id="res-inv-value-usd" class="text-[10px] text-slate-500 block">$0.00 USD</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Предметов</span>
+                        <div id="res-inv-count" class="text-2xl font-black text-white">0</div>
+                        <span id="res-inv-count-sub" class="text-[10px] text-slate-500 block">в инвентаре</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl text-center space-y-1">
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Игр на аккаунте</span>
+                        <div id="res-games-count" class="text-2xl font-black text-amber-400">0</div>
+                        <span class="text-[10px] text-slate-500 block">в библиотеке Steam</span>
+                    </div>
+                </div>
+
+                <!-- Inventory Showcase Section -->
+                <div class="glass-card p-6 md:p-8 rounded-3xl space-y-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/5 pb-5">
+                        <div class="space-y-1">
+                            <h4 class="text-xl font-bold text-white flex items-center space-x-2">
+                                <span>🎒</span>
+                                <span>Инвентарь предметов</span>
+                            </h4>
+                            <p class="text-xs text-slate-400">Фильтруйте по редкости, ищите конкретные скины и сортируйте по стоимости</p>
+                        </div>
+
+                        <!-- Game Selector Tabs -->
+                        <div class="flex items-center bg-black/50 p-1 rounded-xl border border-white/10">
+                            <button onclick="switchInventoryApp(730)" id="app-btn-730" class="px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all bg-cyan-500 text-black shadow">
+                                CS2
+                            </button>
+                            <button onclick="switchInventoryApp(570)" id="app-btn-570" class="px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white">
+                                Dota 2
+                            </button>
+                            <button onclick="switchInventoryApp(440)" id="app-btn-440" class="px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white">
+                                TF2
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Private Inventory Notice (Shows if Private) -->
+                    <div id="inv-private-notice" class="hidden p-8 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
+                        <div class="text-4xl">🔒</div>
+                        <h5 class="text-lg font-bold text-white">Инвентарь скрыт настройками приватности Steam</h5>
+                        <p class="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
+                            Пользователь установил статус приватности инвентаря в положение «Только для друзей» или «Скрытый». Профиль игрока успешно просканирован, но скины защищены политикой Valve.
+                        </p>
+                        <div class="pt-2">
+                            <span class="text-xs font-mono text-cyan-400 bg-black/60 px-4 py-2 rounded-xl inline-block border border-white/10">
+                                Чтобы открыть инвентарь: Steam ➔ Редактировать профиль ➔ Приватность ➔ Инвентарь: Открытый
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Public Inventory Controls (Shows if Public) -->
+                    <div id="inv-public-controls" class="hidden space-y-6">
+                        <!-- Filters Bar -->
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="relative flex-1">
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                                <input id="item-search-filter" oninput="renderItemsGrid()" type="text" placeholder="Поиск по скину или оружию (напр. AK-47, AWP, нож)..."
+                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-500 text-xs font-mono focus:outline-none focus:border-cyan-400">
+                            </div>
+
+                            <div class="flex gap-2">
+                                <select id="item-rarity-filter" onchange="renderItemsGrid()" class="px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-slate-300 text-xs font-mono focus:outline-none focus:border-cyan-400">
+                                    <option value="all">Все редкости</option>
+                                    <option value="knife">★ Ножи и перчатки</option>
+                                    <option value="covert">Тайное (Красное)</option>
+                                    <option value="classified">Засекреченное (Розовое)</option>
+                                    <option value="restricted">Запрещенное (Фиолетовое)</option>
+                                    <option value="mil-spec">Армейское (Синее)</option>
+                                    <option value="stattrak">StatTrak™</option>
+                                </select>
+
+                                <select id="item-sort-filter" onchange="renderItemsGrid()" class="px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-slate-300 text-xs font-mono focus:outline-none focus:border-cyan-400">
+                                    <option value="price-desc">Сначала дорогие</option>
+                                    <option value="price-asc">Сначала дешевые</option>
+                                    <option value="name-asc">По названию (А-Я)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Stats count summary -->
+                        <div class="flex items-center justify-between text-xs font-mono text-slate-500">
+                            <span>Найдено предметов: <strong id="filter-count-badge" class="text-cyan-400 font-bold">0</strong></span>
+                            <span>Цены рассчитаны по ориентирам торговой площадки</span>
+                        </div>
+
+                        <!-- Items Grid -->
+                        <div id="items-grid-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- MODE 2: VS COMPARISON BATTLE ARENA         -->
+        <!-- ========================================== -->
+        <section id="section-vs" class="hidden space-y-6">
+
+            <div class="glass-card p-6 md:p-8 rounded-3xl space-y-6 border-indigo-500/20 shadow-2xl relative overflow-hidden">
+                <div class="absolute -left-20 -top-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="space-y-1">
+                    <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center space-x-3">
+                        <span>⚔️</span>
+                        <span>Режим битвы: Сравнение с другом</span>
+                    </h2>
+                    <p class="text-sm text-slate-400">
+                        Введите профили двух игроков и сравните их инвентари, уровень Steam, количество игр и выявите победителя!
+                    </p>
+                </div>
+
+                <!-- Dual Search Inputs -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider block flex items-center space-x-1.5">
+                            <span>👤</span>
+                            <span>Игрок 1 (Вы)</span>
+                        </label>
+                        <input id="vs-query-1" type="text" placeholder="Ссылка на профиль или логин игрока 1..."
+                            class="w-full px-4 py-3 rounded-2xl bg-black/50 border border-cyan-500/30 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-cyan-400">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-mono text-rose-400 font-bold uppercase tracking-wider block flex items-center space-x-1.5">
+                            <span>👤</span>
+                            <span>Игрок 2 (Друг / Оппонент)</span>
+                        </label>
+                        <input id="vs-query-2" type="text" placeholder="Ссылка на профиль или логин игрока 2..."
+                            class="w-full px-4 py-3 rounded-2xl bg-black/50 border border-rose-500/30 text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-rose-400">
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                    <div class="flex flex-wrap gap-2 text-xs font-mono text-slate-400">
+                        <span>Быстрая загрузка:</span>
+                        <button onclick="fillVsPreset('https://steamcommunity.com/id/ohnePixel', '76561198288650324')" class="text-cyan-400 hover:underline">ohnePixel vs Черкаши</button>
+                        <span>•</span>
+                        <button onclick="fillVsPreset('s1mple', 'gabelogannewell')" class="text-cyan-400 hover:underline">s1mple vs Gabe</button>
+                    </div>
+
+                    <button onclick="runCompare()" id="vs-submit-btn" class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 text-black font-black text-sm hover:opacity-95 transition-all shadow-lg shadow-amber-500/30 flex items-center justify-center space-x-2">
+                        <i data-lucide="swords" class="w-4 h-4"></i>
+                        <span>Начать битву профилей</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VS Loading Spinner -->
+            <div id="vs-loader" class="hidden text-center py-16 space-y-4">
+                <div class="w-14 h-14 border-4 border-amber-500/20 border-t-amber-400 rounded-full animate-spin mx-auto"></div>
+                <div class="space-y-1">
+                    <p class="font-bold text-white text-base">Сравниваем данные обоих игроков...</p>
+                    <p class="text-xs text-slate-400 font-mono">Сканируем инвентари, уровни и стаж профилей</p>
+                </div>
+            </div>
+
+            <!-- VS Battle Results Screen -->
+            <div id="vs-result-card" class="hidden space-y-6">
+
+                <!-- Players VS Header Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                    <!-- VS Badge in Center -->
+                    <div class="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-rose-500 items-center justify-center font-black text-black shadow-xl shadow-amber-500/40 text-sm">
+                        VS
+                    </div>
+
+                    <!-- Player 1 Card -->
+                    <div id="vs-p1-card" class="glass-card p-6 rounded-3xl space-y-4 border-cyan-500/30">
+                        <div class="flex items-center space-x-4">
+                            <img id="vs-p1-avatar" src="" class="w-20 h-20 rounded-2xl border-2 border-cyan-400 object-cover shadow-lg shadow-cyan-500/20" alt="">
+                            <div class="space-y-1 overflow-hidden">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300">ИГРОК 1</span>
+                                <h4 id="vs-p1-name" class="text-xl font-black text-white truncate">Player 1</h4>
+                                <p id="vs-p1-id64" class="text-xs font-mono text-slate-500 truncate">765611...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player 2 Card -->
+                    <div id="vs-p2-card" class="glass-card p-6 rounded-3xl space-y-4 border-rose-500/30">
+                        <div class="flex items-center space-x-4">
+                            <img id="vs-p2-avatar" src="" class="w-20 h-20 rounded-2xl border-2 border-rose-400 object-cover shadow-lg shadow-rose-500/20" alt="">
+                            <div class="space-y-1 overflow-hidden">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300">ИГРОК 2</span>
+                                <h4 id="vs-p2-name" class="text-xl font-black text-white truncate">Player 2</h4>
+                                <p id="vs-p2-id64" class="text-xs font-mono text-slate-500 truncate">765611...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Battle Comparison Metrics Board -->
+                <div class="glass-card p-6 md:p-8 rounded-3xl space-y-5">
+                    <h4 class="font-bold text-lg text-white flex items-center space-x-2 border-b border-white/5 pb-4">
+                        <span>🏆</span>
+                        <span>Сравнение характеристик и победители:</span>
+                    </h4>
+
+                    <div id="vs-battle-rows" class="space-y-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 bg-[#080a10] py-6 text-center text-xs font-mono text-slate-500">
+        Steam Universal Inspector & Inventory Checker • Киберспортивный инструмент аналитики • 2026
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2 pointer-events-none"></div>
+
+    <script>
+        // State
+        let currentMode = 'single';
+        let currentSingleData = null;
+        let currentAppId = 730;
+
+        function setMode(mode) {
+            currentMode = mode;
+            const singleSec = document.getElementById('section-single');
+            const vsSec = document.getElementById('section-vs');
+            const singleBtn = document.getElementById('mode-single-btn');
+            const vsBtn = document.getElementById('mode-vs-btn');
+
+            if (mode === 'single') {
+                singleSec.classList.remove('hidden');
+                vsSec.classList.add('hidden');
+                singleBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-black shadow-md shadow-cyan-500/20";
+                vsBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 text-slate-400 hover:text-white";
+            } else {
+                singleSec.classList.add('hidden');
+                vsSec.classList.remove('hidden');
+                vsBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-rose-600 text-black shadow-md shadow-amber-500/20";
+                singleBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 text-slate-400 hover:text-white";
+            }
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = `p-4 rounded-2xl text-xs font-mono shadow-2xl border transition-all duration-300 transform translate-y-2 pointer-events-auto flex items-center space-x-2.5 ${
+                type === 'error' ? 'bg-rose-950/90 border-rose-500/40 text-rose-200' :
+                type === 'success' ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200' :
+                'bg-slate-900/90 border-cyan-500/40 text-cyan-200'
+            }`;
+            el.innerHTML = `<span>${type === 'error' ? '❌' : (type === 'success' ? '✅' : 'ℹ️')}</span><span>${msg}</span>`;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            }, 4000);
+        }
+
+        function clearSingleInput() {
+            document.getElementById('single-query-input').value = "";
+            document.getElementById('single-query-input').focus();
+        }
+
+        function usePreset(target) {
+            document.getElementById('single-query-input').value = target;
+            runInspect();
+        }
+
+        function fillVsPreset(q1, q2) {
+            document.getElementById('vs-query-1').value = q1;
+            document.getElementById('vs-query-2').value = q2;
+            runCompare();
+        }
+
+        // Recent searches in localStorage
+        function getRecentSearches() {
+            try {
+                return JSON.parse(localStorage.getItem('steam_recent_searches') || '[]');
+            } catch {
+                return [];
+            }
+        }
+
+        function saveRecentSearch(name, query, sid) {
+            let list = getRecentSearches().filter(x => x.sid !== sid);
+            list.unshift({ name, query, sid, time: Date.now() });
+            list = list.slice(0, 6);
+            localStorage.setItem('steam_recent_searches', JSON.stringify(list));
+            renderRecentSearches();
+        }
+
+        function clearRecentSearches() {
+            localStorage.removeItem('steam_recent_searches');
+            renderRecentSearches();
+        }
+
+        function renderRecentSearches() {
+            const list = getRecentSearches();
+            const box = document.getElementById('recent-searches-box');
+            const container = document.getElementById('recent-pills-container');
+            if (!list.length) {
+                box.classList.add('hidden');
+                return;
+            }
+            box.classList.remove('hidden');
+            container.innerHTML = "";
+            list.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = "px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-[11px] font-mono transition-all flex items-center space-x-1";
+                btn.innerHTML = `<span>👤</span><span>${item.name}</span>`;
+                btn.onclick = () => {
+                    document.getElementById('single-query-input').value = item.sid;
+                    runInspect();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        async function runInspect() {
+            const query = document.getElementById('single-query-input').value.trim();
+            if (!query) {
+                showToast("Введите ссылку на профиль или никнейм!", "error");
+                return;
+            }
+
+            const loader = document.getElementById('single-loader');
+            const card = document.getElementById('single-result-card');
+            loader.classList.remove('hidden');
+            card.classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/inspect', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({query: query, appId: currentAppId})
+                });
+                const data = await res.json();
+                loader.classList.add('hidden');
+
+                if (data.error) {
+                    showToast(data.error, "error");
+                    return;
+                }
+
+                currentSingleData = data;
+                renderSingleResult(data);
+                card.classList.remove('hidden');
+                saveRecentSearch(data.profile.steamID, query, data.profile.steamID64);
+                showToast("Профиль успешно проанализирован!", "success");
+            } catch (err) {
+                loader.classList.add('hidden');
+                showToast("Ошибка соединения с сервером: " + err, "error");
+            }
+        }
+
+        function renderSingleResult(data) {
+            const p = data.profile;
+            const inv = data.inventory;
+
+            document.getElementById('res-avatar').src = p.avatar || "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg";
+            document.getElementById('res-persona').textContent = p.steamID;
+            document.getElementById('res-status-msg').textContent = p.stateMessage;
+            document.getElementById('res-id64').textContent = p.steamID64;
+            document.getElementById('res-member-since').textContent = `В Steam с: ${p.memberSince} (${p.yearsInSteam} лет)`;
+            document.getElementById('res-steam-link').href = `https://steamcommunity.com/profiles/${p.steamID64}/`;
+
+            // Online badge
+            const onlineBadge = document.getElementById('res-online-badge');
+            const onlineDot = document.getElementById('res-online-dot');
+            if (p.onlineState === 'in-game') {
+                onlineBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                onlineBadge.textContent = "В игре";
+                onlineDot.className = "w-5 h-5 rounded-full absolute -bottom-1 -right-1 border-2 border-black bg-emerald-400 animate-pulse";
+            } else if (p.onlineState === 'online') {
+                onlineBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30";
+                onlineBadge.textContent = "В сети";
+                onlineDot.className = "w-5 h-5 rounded-full absolute -bottom-1 -right-1 border-2 border-black bg-cyan-400";
+            } else {
+                onlineBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-800 text-slate-400";
+                onlineBadge.textContent = "Офлайн";
+                onlineDot.className = "w-5 h-5 rounded-full absolute -bottom-1 -right-1 border-2 border-black bg-slate-600";
+            }
+
+            // Level & Badges
+            document.getElementById('res-level-badge').textContent = `⚡ LVL ${p.level}`;
+            document.getElementById('res-badges-badge').textContent = `🎖 ${p.badges} значков`;
+
+            // VAC status
+            const vacBadge = document.getElementById('res-vac-badge');
+            if (p.vacBanned) {
+                vacBadge.className = "px-3.5 py-2 rounded-2xl text-xs font-bold font-mono bg-rose-500/20 text-rose-400 border border-rose-500/40 neon-glow-red";
+                vacBadge.textContent = "❌ ЕСТЬ БЛОКИРОВКА VAC";
+            } else {
+                vacBadge.className = "px-3.5 py-2 rounded-2xl text-xs font-bold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                vacBadge.textContent = "🛡 Без блокировок (VAC Clean)";
+            }
+
+            // Games Count
+            document.getElementById('res-games-count').textContent = p.totalGames;
+
+            // Inventory Status Cards
+            const statusPill = document.getElementById('res-inv-status-pill');
+            const statusSub = document.getElementById('res-inv-status-sub');
+            const valRub = document.getElementById('res-inv-value-rub');
+            const valUsd = document.getElementById('res-inv-value-usd');
+            const invCount = document.getElementById('res-inv-count');
+            const privateNotice = document.getElementById('inv-private-notice');
+            const publicControls = document.getElementById('inv-public-controls');
+
+            if (inv.is_public) {
+                statusPill.className = "text-lg font-black text-emerald-400";
+                statusPill.textContent = "🔓 Открыт";
+                statusSub.textContent = "публичный доступ";
+                valRub.textContent = `~${inv.total_value_rub.toLocaleString('ru-RU')} ₽`;
+                valUsd.textContent = `$${inv.total_value_usd.toLocaleString('en-US')} USD`;
+                invCount.textContent = inv.total_count;
+
+                privateNotice.classList.add('hidden');
+                publicControls.classList.remove('hidden');
+                renderItemsGrid();
+            } else {
+                statusPill.className = "text-lg font-black text-amber-400";
+                statusPill.textContent = "🔒 Скрыт";
+                statusSub.textContent = "приватность Steam";
+                valRub.textContent = "Скрыто 🔒";
+                valUsd.textContent = "в настройках Steam";
+                invCount.textContent = "—";
+
+                privateNotice.classList.remove('hidden');
+                publicControls.classList.add('hidden');
+            }
+        }
+
+        function switchInventoryApp(appId) {
+            currentAppId = appId;
+            [730, 570, 440].forEach(id => {
+                const btn = document.getElementById(`app-btn-${id}`);
+                if (id === appId) {
+                    btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all bg-cyan-500 text-black shadow";
+                } else {
+                    btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white";
+                }
+            });
+            if (currentSingleData && currentSingleData.profile) {
+                runInspect();
+            }
+        }
+
+        function renderItemsGrid() {
+            if (!currentSingleData || !currentSingleData.inventory || !currentSingleData.inventory.items) return;
+
+            const items = currentSingleData.inventory.items;
+            const searchVal = (document.getElementById('item-search-filter').value || "").toLowerCase().trim();
+            const rarityFilter = document.getElementById('item-rarity-filter').value;
+            const sortFilter = document.getElementById('item-sort-filter').value;
+
+            let filtered = items.filter(item => {
+                const name = (item.name || "").toLowerCase();
+                const rarity = (item.rarity || "").toLowerCase();
+                
+                if (searchVal && !name.includes(searchVal)) return false;
+
+                if (rarityFilter === 'knife') {
+                    return name.includes('★') || name.includes('нож') || name.includes('перчатки') || name.includes('knife') || name.includes('gloves');
+                } else if (rarityFilter === 'covert') {
+                    return rarity.includes('тайное') || rarity.includes('covert');
+                } else if (rarityFilter === 'classified') {
+                    return rarity.includes('засекреченное') || rarity.includes('classified');
+                } else if (rarityFilter === 'restricted') {
+                    return rarity.includes('запрещенное') || rarity.includes('restricted');
+                } else if (rarityFilter === 'mil-spec') {
+                    return rarity.includes('армейское') || rarity.includes('mil-spec');
+                } else if (rarityFilter === 'stattrak') {
+                    return item.is_stattrak;
+                }
+                return true;
+            });
+
+            // Sort
+            if (sortFilter === 'price-desc') {
+                filtered.sort((a, b) => b.price_rub - a.price_rub);
+            } else if (sortFilter === 'price-asc') {
+                filtered.sort((a, b) => a.price_rub - b.price_rub);
+            } else if (sortFilter === 'name-asc') {
+                filtered.sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            document.getElementById('filter-count-badge').textContent = filtered.length;
+            const container = document.getElementById('items-grid-container');
+            container.innerHTML = "";
+
+            if (!filtered.length) {
+                container.innerHTML = `
+                    <div class="col-span-full py-12 text-center space-y-2">
+                        <div class="text-3xl">🔎</div>
+                        <p class="text-sm font-semibold text-slate-400">Предметы не найдены</p>
+                        <p class="text-xs text-slate-600 font-mono">Попробуйте изменить поисковый запрос или сбросить фильтр редкости</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "glass-card p-3 rounded-2xl flex flex-col justify-between space-y-2.5 glass-card-hover group border-white/5 relative overflow-hidden";
+                card.style.borderBottomColor = item.rarity_color || '#b0c3d9';
+                card.style.borderBottomWidth = '3px';
+
+                card.innerHTML = `
+                    <div class="relative w-full aspect-[4/3] rounded-xl bg-black/40 flex items-center justify-center p-2 overflow-hidden border border-white/5">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-40"></div>
+                        ${item.is_stattrak ? `<span class="absolute top-1.5 left-1.5 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">StatTrak™</span>` : ''}
+                        ${item.is_souvenir ? `<span class="absolute top-1.5 left-1.5 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">Сувенир</span>` : ''}
+                        <img src="${item.image}" alt="${item.name}" loading="lazy" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md">
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="text-xs font-bold text-white truncate" title="${item.name}">
+                            ${item.name}
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                            <span class="truncate" style="color: ${item.rarity_color}">${item.rarity}</span>
+                            <span class="shrink-0 text-slate-500">${item.exterior ? item.exterior.split(' ')[0] : ''}</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-1.5 border-t border-white/5 flex items-center justify-between">
+                        <span class="text-xs font-black font-mono text-cyan-400">
+                            ${item.price_rub.toLocaleString('ru-RU')} ₽
+                        </span>
+                        <span class="text-[10px] font-mono text-slate-500" title="В долларах">
+                            $${item.price_usd}
+                        </span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function copySteamId() {
+            const sid = document.getElementById('res-id64').textContent;
+            navigator.clipboard.writeText(sid);
+            showToast("SteamID64 скопирован в буфер обмена!", "info");
+        }
+
+        // ==========================================
+        // VS MODE LOGIC
+        // ==========================================
+        async function runCompare() {
+            const q1 = document.getElementById('vs-query-1').value.trim();
+            const q2 = document.getElementById('vs-query-2').value.trim();
+
+            if (!q1 || !q2) {
+                showToast("Заполните оба поля для сравнения!", "error");
+                return;
+            }
+
+            const loader = document.getElementById('vs-loader');
+            const card = document.getElementById('vs-result-card');
+            loader.classList.remove('hidden');
+            card.classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/compare', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({query1: q1, query2: q2, appId: currentAppId})
+                });
+                const data = await res.json();
+                loader.classList.add('hidden');
+
+                if (data.error) {
+                    showToast(data.error, "error");
+                    return;
+                }
+
+                renderCompareResult(data);
+                card.classList.remove('hidden');
+                showToast("Битва завершена! Победители определены.", "success");
+            } catch (err) {
+                loader.classList.add('hidden');
+                showToast("Ошибка битвы: " + err, "error");
+            }
+        }
+
+        function renderCompareResult(data) {
+            const p1 = data.player1.profile;
+            const inv1 = data.player1.inventory;
+            const p2 = data.player2.profile;
+            const inv2 = data.player2.inventory;
+            const battle = data.battle;
+
+            // Header Cards
+            document.getElementById('vs-p1-avatar').src = p1.avatar;
+            document.getElementById('vs-p1-name').textContent = p1.steamID;
+            document.getElementById('vs-p1-id64').textContent = `ID: ${p1.steamID64}`;
+
+            document.getElementById('vs-p2-avatar').src = p2.avatar;
+            document.getElementById('vs-p2-name').textContent = p2.steamID;
+            document.getElementById('vs-p2-id64').textContent = `ID: ${p2.steamID64}`;
+
+            // Battle Rows Generator
+            const rowsContainer = document.getElementById('vs-battle-rows');
+            rowsContainer.innerHTML = "";
+
+            const metrics = [
+                {
+                    title: "Стоимость инвентаря CS2",
+                    icon: "💰",
+                    val1: inv1.is_public ? `${inv1.total_value_rub.toLocaleString('ru-RU')} ₽` : "Скрыто 🔒",
+                    val2: inv2.is_public ? `${inv2.total_value_rub.toLocaleString('ru-RU')} ₽` : "Скрыто 🔒",
+                    winner: battle.winner_value
+                },
+                {
+                    title: "Уровень Steam (Level)",
+                    icon: "⚡",
+                    val1: `LVL ${p1.level}`,
+                    val2: `LVL ${p2.level}`,
+                    winner: battle.winner_level
+                },
+                {
+                    title: "Предметов в инвентаре",
+                    icon: "📦",
+                    val1: inv1.is_public ? `${inv1.total_count} шт.` : "Скрыто 🔒",
+                    val2: inv2.is_public ? `${inv2.total_count} шт.` : "Скрыто 🔒",
+                    winner: battle.winner_items
+                },
+                {
+                    title: "Всего игр на аккаунте",
+                    icon: "🎮",
+                    val1: `${p1.totalGames} игр`,
+                    val2: `${p2.totalGames} игр`,
+                    winner: battle.winner_games
+                },
+                {
+                    title: "Стаж в Steam (лет)",
+                    icon: "📅",
+                    val1: `${p1.yearsInSteam} лет`,
+                    val2: `${p2.yearsInSteam} лет`,
+                    winner: battle.winner_years
+                },
+                {
+                    title: "Статус блокировок VAC",
+                    icon: "🛡",
+                    val1: p1.vacBanned ? "❌ ЕСТЬ БАН" : "🛡 Чист (Clean)",
+                    val2: p2.vacBanned ? "❌ ЕСТЬ БАН" : "🛡 Чист (Clean)",
+                    winner: (!p1.vacBanned && p2.vacBanned) ? 1 : ((p1.vacBanned && !p2.vacBanned) ? 2 : 0)
+                }
+            ];
+
+            metrics.forEach(m => {
+                const row = document.createElement('div');
+                row.className = "p-4 rounded-2xl bg-black/40 border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3";
+                
+                const win1 = m.winner === 1;
+                const win2 = m.winner === 2;
+
+                row.innerHTML = `
+                    <div class="w-full sm:w-1/3 text-center sm:text-left">
+                        <span class="text-xs font-mono font-bold block ${win1 ? 'text-amber-400 font-black' : 'text-slate-300'}">
+                            ${m.val1} ${win1 ? '👑' : ''}
+                        </span>
+                        <span class="text-[10px] text-slate-500 font-mono">${p1.steamID}</span>
+                    </div>
+
+                    <div class="w-full sm:w-1/3 text-center space-y-0.5">
+                        <span class="text-xs font-bold text-white flex items-center justify-center space-x-1">
+                            <span>${m.icon}</span>
+                            <span>${m.title}</span>
+                        </span>
+                        <span class="text-[10px] font-mono ${win1 ? 'text-cyan-400' : (win2 ? 'text-rose-400' : 'text-slate-500')} block">
+                            ${win1 ? 'Победа Игрока 1' : (win2 ? 'Победа Игрока 2' : 'Ничья')}
+                        </span>
+                    </div>
+
+                    <div class="w-full sm:w-1/3 text-center sm:text-right">
+                        <span class="text-xs font-mono font-bold block ${win2 ? 'text-amber-400 font-black' : 'text-slate-300'}">
+                            ${win2 ? '👑' : ''} ${m.val2}
+                        </span>
+                        <span class="text-[10px] text-slate-500 font-mono">${p2.steamID}</span>
+                    </div>
+                `;
+                rowsContainer.appendChild(row);
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderRecentSearches();
+
+            // Enter key listener
+            document.getElementById('single-query-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') runInspect();
+            });
+        });
+    </script>
+</body>
+</html>
